@@ -1,14 +1,5 @@
 export default [
   {
-    method: 'POST',
-    path: '/query',
-    handler: 'controller.query',
-    config: {
-      policies: [],
-      auth: false,
-    },
-  },
-  {
     method: 'GET',
     path: '/profiles',
     handler: 'controller.listProfiles',
@@ -33,9 +24,41 @@ export default [
     },
   },
   {
+    method: 'DELETE',
+    path: '/profiles/:id',
+    handler: 'controller.deleteProfile',
+    config: {
+      policies: [],
+    },
+  },
+  {
     method: 'POST',
-    path: '/generate',
-    handler: 'controller.generateEmbedding',
+    path: '/profiles/:id/reindex',
+    handler: 'controller.reindexProfile',
+    config: {
+      policies: [],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/jobs',
+    handler: 'controller.listJobs',
+    config: {
+      policies: [],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/logs',
+    handler: 'controller.listLogs',
+    config: {
+      policies: [],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/content-types',
+    handler: 'controller.getContentTypes',
     config: {
       policies: [],
     },

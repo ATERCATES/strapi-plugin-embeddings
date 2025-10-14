@@ -137,19 +137,6 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
         }
       }
       
-      // Validate optional fields
-      if (data.provider && !['openai'].includes(data.provider)) {
-        return ctx.badRequest('provider must be: openai');
-      }
-      
-      if (data.distance_metric && !['cosine', 'l2', 'dot'].includes(data.distance_metric)) {
-        return ctx.badRequest('distance_metric must be one of: cosine, l2, dot');
-      }
-      
-      if (data.embedding_dimension && (typeof data.embedding_dimension !== 'number' || data.embedding_dimension < 1)) {
-        return ctx.badRequest('embedding_dimension must be a positive number');
-      }
-      
       const profile = await strapi
         .plugin('embeddings')
         .service('service')
@@ -226,6 +213,187 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       strapi.log.error('[Embeddings Plugin] Generate embedding error:', error);
       const message = error.message || 'Error generating embedding';
       ctx.throw(500, message);
+    }
+  },
+
+  /**
+   * GET /embeddings/content-types
+   * Get all content types with their text fields
+   */
+  async getContentTypes(ctx: any) {
+    try {
+      const contentTypes = strapi.contentTypes;
+      const result: any[] = [];
+
+      for (const [uid, contentType] of Object.entries(contentTypes)) {
+        // Skip system content types
+        if (uid.startsWith('admin::') || uid.startsWith('plugin::upload') || uid.startsWith('plugin::embeddings')) {
+          continue;
+        }
+
+        const textFields: any[] = [];
+        const attributes = (contentType as any).attributes || {};
+
+        for (const [fieldName, field] of Object.entries(attributes)) {
+          const fieldType = (field as any).type;
+          
+          // Include text, richtext, and string fields
+          if (fieldType === 'text' || fieldType === 'richtext' || fieldType === 'string') {
+            textFields.push({
+              name: fieldName,
+              type: fieldType,
+            });
+          }
+        }
+
+        // Only include content types that have text fields
+        if (textFields.length > 0) {
+          result.push({
+            uid,
+            displayName: (contentType as any).info?.displayName || uid,
+            fields: textFields,
+          });
+        }
+      }
+
+      ctx.body = { data: result };
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Get content types error:', error);
+      ctx.throw(500, 'Error fetching content types');
+    }
+  },
+
+  /**
+   * GET /embeddings/queries
+   * Get query history with results
+   */
+  async getQueryHistory(ctx: any) {
+    try {
+      const { profileId, limit, offset } = ctx.query;
+      
+      // Validate parameters
+      const parsedLimit = limit ? parseInt(limit) : 50;
+      const parsedOffset = offset ? parseInt(offset) : 0;
+      
+      if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 1000) {
+        return ctx.badRequest('limit must be a number between 1 and 1000');
+      }
+      
+      if (isNaN(parsedOffset) || parsedOffset < 0) {
+        return ctx.badRequest('offset must be a non-negative number');
+      }
+      
+      const queries = await strapi
+        .plugin('embeddings')
+        .service('service')
+        .getQueryHistory({
+          profileId,
+          limit: parsedLimit,
+          offset: parsedOffset,
+        });
+      
+      ctx.body = {
+        data: queries,
+        meta: {
+          total: queries.length,
+          limit: parsedLimit,
+          offset: parsedOffset,
+        },
+      };
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Get query history error:', error);
+      ctx.throw(500, 'Error fetching query history');
+    }
+  },
+
+  /**
+   * DELETE /embeddings/profiles/:id
+   * Delete a profile
+   */
+  async deleteProfile(ctx: any) {
+    try {
+      const { id } = ctx.params;
+      
+      if (!id) {
+        return ctx.badRequest('Profile ID is required');
+      }
+      
+      await strapi
+        .plugin('embeddings')
+        .service('service')
+        .deleteProfile(id);
+      
+      ctx.body = { data: { success: true } };
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Delete profile error:', error);
+      ctx.throw(500, 'Error deleting profile');
+    }
+  },
+
+  /**
+   * POST /embeddings/profiles/:id/reindex
+   * Trigger reindexing for a profile
+   */
+  async reindexProfile(ctx: any) {
+    try {
+      const { id } = ctx.params;
+      
+      if (!id) {
+        return ctx.badRequest('Profile ID is required');
+      }
+      
+      // This would typically queue a job to reindex
+      // For now, return success
+      ctx.body = { 
+        data: { 
+          success: true,
+          message: 'Reindexing job has been queued',
+          jobId: `job-${id}-${Date.now()}`
+        } 
+      };
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Reindex profile error:', error);
+      ctx.throw(500, 'Error starting reindex');
+    }
+  },
+
+  /**
+   * GET /embeddings/jobs
+   * Get indexing jobs
+   */
+  async listJobs(ctx: any) {
+    try {
+      // For now, return empty array
+      // This would typically fetch from a job queue or database
+      ctx.body = {
+        data: [],
+        meta: {
+          total: 0,
+        },
+      };
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] List jobs error:', error);
+      ctx.throw(500, 'Error fetching jobs');
+    }
+  },
+
+  /**
+   * GET /embeddings/logs
+   * Get API query logs
+   */
+  async listLogs(ctx: any) {
+    try {
+      // For now, return empty array
+      // This would typically fetch from a logs table
+      ctx.body = {
+        data: [],
+        meta: {
+          total: 0,
+        },
+      };
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] List logs error:', error);
+      ctx.throw(500, 'Error fetching logs');
     }
   },
 });

@@ -99,26 +99,68 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       const cleanMetadata = metadata && typeof metadata === 'object' ? metadata : {};
       
       // Upsert to database using proper PostgreSQL ON CONFLICT
+      // Note: Since locale can be NULL and PostgreSQL treats NULL != NULL in unique constraints,
+      // we need to handle NULL locale separately
       const knex = strapi.db.connection;
-      const result = await knex.raw(`
-        INSERT INTO plugin_embeddings_vectors 
-          (profile_id, content_type, content_id, field_name, locale, embedding, metadata, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?::vector, ?::jsonb, NOW(), NOW())
-        ON CONFLICT (profile_id, content_type, content_id, field_name, COALESCE(locale, ''))
-        DO UPDATE SET
-          embedding = EXCLUDED.embedding,
-          metadata = EXCLUDED.metadata,
-          updated_at = NOW()
-        RETURNING *
-      `, [
-        profileId,
-        contentType,
-        contentId,
-        fieldName,
-        locale || null,
-        vectorString,
-        JSON.stringify(cleanMetadata)
-      ]);
+      
+      let result;
+      if (locale) {
+        // If locale is provided, use the unique constraint
+        result = await knex.raw(`
+          INSERT INTO plugin_embeddings_vectors 
+            (profile_id, content_type, content_id, field_name, locale, embedding, metadata, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?::vector, ?::jsonb, NOW(), NOW())
+          ON CONFLICT (profile_id, content_type, content_id, field_name, locale)
+          DO UPDATE SET
+            embedding = EXCLUDED.embedding,
+            metadata = EXCLUDED.metadata,
+            updated_at = NOW()
+          RETURNING *
+        `, [
+          profileId,
+          contentType,
+          contentId,
+          fieldName,
+          locale,
+          vectorString,
+          JSON.stringify(cleanMetadata)
+        ]);
+      } else {
+        // If locale is NULL, we need to update or insert based on manual check
+        // since UNIQUE constraint doesn't handle NULL properly for our use case
+        const existing = await knex('plugin_embeddings_vectors')
+          .where({
+            profile_id: profileId,
+            content_type: contentType,
+            content_id: contentId,
+            field_name: fieldName,
+          })
+          .whereNull('locale')
+          .first();
+        
+        if (existing) {
+          result = await knex.raw(`
+            UPDATE plugin_embeddings_vectors
+            SET embedding = ?::vector, metadata = ?::jsonb, updated_at = NOW()
+            WHERE id = ?
+            RETURNING *
+          `, [vectorString, JSON.stringify(cleanMetadata), existing.id]);
+        } else {
+          result = await knex.raw(`
+            INSERT INTO plugin_embeddings_vectors 
+              (profile_id, content_type, content_id, field_name, locale, embedding, metadata, created_at, updated_at)
+            VALUES (?, ?, ?, ?, NULL, ?::vector, ?::jsonb, NOW(), NOW())
+            RETURNING *
+          `, [
+            profileId,
+            contentType,
+            contentId,
+            fieldName,
+            vectorString,
+            JSON.stringify(cleanMetadata)
+          ]);
+        }
+      }
       
       strapi.log.debug(`[Embeddings Plugin] Upserted embedding for ${contentType}:${contentId}:${fieldName}`);
       return result.rows[0];
@@ -139,6 +181,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     distanceMetric?: 'cosine' | 'l2' | 'dot';
     filters?: Record<string, any>;
     minSimilarity?: number;
+    logQuery?: boolean;
   }) {
     const {
       query,
@@ -148,6 +191,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       distanceMetric = 'cosine',
       filters = {},
       minSimilarity,
+      logQuery = true,
     } = params;
 
     // Validate k parameter
@@ -156,6 +200,16 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     }
 
     try {
+      // Log the query if enabled
+      let queryId: string | undefined;
+      if (logQuery) {
+        queryId = await this.logSearchQuery({
+          profileId,
+          queryText: query,
+          k,
+        });
+      }
+
       // Generate embedding for query
       const queryEmbedding = await this.generateEmbedding(query);
       const vectorString = `[${queryEmbedding.join(',')}]`;
@@ -233,6 +287,22 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
         LIMIT ?
       `, [vectorString, vectorString, vectorString, ...whereParams, vectorString, k]);
       
+      // Log results if query was logged
+      if (logQuery && queryId && results.rows.length > 0) {
+        await this.logSearchResults({
+          queryId,
+          results: results.rows.map((row: any, index: number) => ({
+            contentType: row.content_type,
+            contentId: row.content_id,
+            fieldName: row.field_name,
+            locale: row.locale,
+            similarityScore: parseFloat(row.similarity_score),
+            metadata: row.metadata,
+            position: index + 1,
+          })),
+        });
+      }
+      
       return results.rows;
     } catch (error: any) {
       strapi.log.error('[Embeddings Plugin] Error in semantic search:', error);
@@ -282,9 +352,6 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     name: string;
     slug: string;
     description?: string;
-    provider?: string;
-    embedding_dimension?: number;
-    distance_metric?: string;
     fields: Array<{
       content_type: string;
       field_name: string;
@@ -301,9 +368,6 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
             name: data.name,
             slug: data.slug,
             description: data.description,
-            provider: data.provider || 'openai',
-            embedding_dimension: data.embedding_dimension || 1536,
-            distance_metric: data.distance_metric || 'cosine',
             enabled: true,
             auto_sync: true,
           })
@@ -345,6 +409,123 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       .del();
     
     strapi.log.debug(`[Embeddings Plugin] Deleted embeddings for ${contentType}:${contentId}`);
+  },
+
+  /**
+   * Log a search query to the history
+   */
+  async logSearchQuery(params: {
+    profileId?: string;
+    queryText: string;
+    k: number;
+  }): Promise<string> {
+    const { profileId, queryText, k } = params;
+    
+    try {
+      const knex = strapi.db.connection;
+      const [result] = await knex('plugin_embedding_queries')
+        .insert({
+          profile_id: profileId || null,
+          query_text: queryText,
+          k,
+        })
+        .returning('id');
+      
+      return result.id;
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Error logging search query:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Log search results for a query
+   */
+  async logSearchResults(params: {
+    queryId: string;
+    results: Array<{
+      contentType: string;
+      contentId: string;
+      fieldName: string;
+      locale?: string;
+      similarityScore: number;
+      metadata?: Record<string, any>;
+      position: number;
+    }>;
+  }) {
+    const { queryId, results } = params;
+    
+    if (!results || results.length === 0) {
+      return;
+    }
+    
+    try {
+      const knex = strapi.db.connection;
+      const recordsToInsert = results.map((result) => ({
+        query_id: queryId,
+        content_type: result.contentType,
+        content_id: result.contentId,
+        field_name: result.fieldName,
+        locale: result.locale || null,
+        similarity_score: result.similarityScore,
+        metadata: JSON.stringify(result.metadata || {}),
+        position: result.position,
+      }));
+      
+      await knex('plugin_embedding_query_results')
+        .insert(recordsToInsert);
+      
+      strapi.log.debug(`[Embeddings Plugin] Logged ${results.length} search results for query ${queryId}`);
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Error logging search results:', error);
+      // Don't throw - this is non-critical functionality
+    }
+  },
+
+  /**
+   * Get query history with results
+   */
+  async getQueryHistory(params: {
+    profileId?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const { profileId, limit = 50, offset = 0 } = params;
+    
+    try {
+      const knex = strapi.db.connection;
+      
+      let query = knex('plugin_embedding_queries')
+        .select('*')
+        .orderBy('created_at', 'desc')
+        .limit(limit)
+        .offset(offset);
+      
+      if (profileId) {
+        query = query.where({ profile_id: profileId });
+      }
+      
+      const queries = await query;
+      
+      // Get results for each query
+      const queriesWithResults = await Promise.all(
+        queries.map(async (query: any) => {
+          const results = await knex('plugin_embedding_query_results')
+            .where({ query_id: query.id })
+            .orderBy('position', 'asc');
+          
+          return {
+            ...query,
+            results,
+          };
+        })
+      );
+      
+      return queriesWithResults;
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Error getting query history:', error);
+      throw error;
+    }
   },
 });
 
