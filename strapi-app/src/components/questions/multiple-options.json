@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_questions_multiple_options",
+  "info": {
+    "name": "Opciones múltiples",
+    "displayName": "Opciones múltiples",
+    "icon": "align-center",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "options": {
+      "type": "component",
+      "repeatable": true,
+      "component": "base.option",
+      "min": 1,
+      "required": true
+    },
+    "exam": {
+      "type": "boolean"
+    }
+  }
+}

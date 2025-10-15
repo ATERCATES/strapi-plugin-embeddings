@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_license_data_requirements",
+  "info": {
+    "displayName": "Requirements",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "license_stage": {
+      "type": "string"
+    }
+  }
+}

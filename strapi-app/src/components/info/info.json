@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_info_infos",
+  "info": {
+    "name": "Info",
+    "displayName": "Info",
+    "icon": "asterisk",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "Environment": {
+      "type": "enumeration",
+      "enum": [
+        "Dev",
+        "Prod"
+      ],
+      "required": true,
+      "default": "Dev"
+    }
+  }
+}

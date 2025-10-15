@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_license_data_advantages",
+  "info": {
+    "displayName": "advantages",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "included": {
+      "type": "boolean",
+      "required": true
+    },
+    "title": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::license-advantage.license-advantage"
+    }
+  }
+}

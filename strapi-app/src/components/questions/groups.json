@@ -1,0 +1,28 @@
+{
+  "collectionName": "components_questions_groups",
+  "info": {
+    "name": "Agrupar",
+    "displayName": "Agrupar",
+    "icon": "th-list",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "group_A": {
+      "type": "string"
+    },
+    "group_B": {
+      "type": "string"
+    },
+    "options_group_A": {
+      "type": "component",
+      "repeatable": true,
+      "component": "base.group-option"
+    },
+    "options_group_B": {
+      "type": "component",
+      "repeatable": true,
+      "component": "base.group-option"
+    }
+  }
+}

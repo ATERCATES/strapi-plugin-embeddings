@@ -1,0 +1,21 @@
+{
+  "kind": "collectionType",
+  "collectionName": "ai_contents",
+  "info": {
+    "singularName": "ai-content",
+    "pluralName": "ai-contents",
+    "displayName": "AI Content"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Content": {
+      "type": "text"
+    }
+  }
+}

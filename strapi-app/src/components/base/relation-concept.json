@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_base_relation_concepts",
+  "info": {
+    "name": "relation_concept",
+    "displayName": "relation_concept",
+    "icon": "bacon"
+  },
+  "options": {},
+  "attributes": {
+    "concept_A": {
+      "type": "string"
+    },
+    "photo_A": {
+      "type": "media",
+      "via": "related",
+      "allowedTypes": [
+        "images"
+      ],
+      "plugin": "upload",
+      "required": false,
+      "pluginOptions": {}
+    },
+    "concept_B": {
+      "type": "string"
+    },
+    "photo_B": {
+      "type": "media",
+      "via": "related",
+      "allowedTypes": [
+        "images"
+      ],
+      "plugin": "upload",
+      "required": false,
+      "pluginOptions": {}
+    }
+  }
+}

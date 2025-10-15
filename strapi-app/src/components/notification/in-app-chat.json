@@ -1,0 +1,12 @@
+{
+  "collectionName": "components_notification_in_app_chats",
+  "info": {
+    "displayName": "inAppChat"
+  },
+  "options": {},
+  "attributes": {
+    "body": {
+      "type": "richtext"
+    }
+  }
+}

@@ -54,6 +54,81 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
   },
 
   /**
+   * GET /embeddings/:profileName/query
+   * Perform semantic search by profile name with natural language query
+   */
+  async queryByProfileName(ctx: any) {
+    try {
+      const { profileName } = ctx.params;
+      const { q, k, distanceMetric, minSimilarity } = ctx.query;
+      
+      // Validation
+      if (!profileName || typeof profileName !== 'string') {
+        return ctx.badRequest('Profile name is required');
+      }
+      
+      if (!q || typeof q !== 'string') {
+        return ctx.badRequest('Query parameter "q" is required and must be a string');
+      }
+      
+      // Get profile by slug/name
+      const profiles = await strapi
+        .plugin('embeddings')
+        .service('service')
+        .getProfiles();
+      
+      const profile = profiles.find((p: any) => p.slug === profileName || p.name === profileName);
+      
+      if (!profile) {
+        return ctx.notFound(`Profile "${profileName}" not found`);
+      }
+      
+      // Parse optional parameters
+      const parsedK = k ? parseInt(k as string, 10) : 10;
+      const parsedMinSimilarity = minSimilarity ? parseFloat(minSimilarity as string) : undefined;
+      
+      if (parsedK < 1 || parsedK > 1000) {
+        return ctx.badRequest('k must be a number between 1 and 1000');
+      }
+      
+      if (distanceMetric && !['cosine', 'l2', 'dot'].includes(distanceMetric as string)) {
+        return ctx.badRequest('distanceMetric must be one of: cosine, l2, dot');
+      }
+
+      if (parsedMinSimilarity !== undefined && (parsedMinSimilarity < 0 || parsedMinSimilarity > 1)) {
+        return ctx.badRequest('minSimilarity must be a number between 0 and 1');
+      }
+      
+      const results = await strapi
+        .plugin('embeddings')
+        .service('service')
+        .semanticSearch({
+          query: q as string,
+          profileId: profile.id,
+          k: parsedK,
+          distanceMetric: (distanceMetric as any) || 'cosine',
+          filters: {},
+          minSimilarity: parsedMinSimilarity,
+        });
+      
+      ctx.body = {
+        data: results,
+        meta: {
+          total: results.length,
+          profileName: profile.name,
+          profileSlug: profile.slug,
+          query: q,
+          distanceMetric: distanceMetric || 'cosine',
+        },
+      };
+    } catch (error: any) {
+      strapi.log.error('[Embeddings Plugin] Query by profile name error:', error);
+      const message = error.message || 'Error performing semantic search';
+      ctx.throw(500, message);
+    }
+  },
+
+  /**
    * GET /embeddings/profiles
    * Get all profiles
    */
@@ -142,15 +217,20 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
         .service('service')
         .createProfile(data);
       
+      // Start indexing in the background
+      setImmediate(async () => {
+        try {
+          strapi.log.info(`[Embeddings Plugin] Starting background indexing for profile ${profile.id}`);
+          await strapi.plugin('embeddings').service('service').indexProfile(profile.id);
+        } catch (error: any) {
+          strapi.log.error(`[Embeddings Plugin] Error indexing profile ${profile.id}:`, error);
+        }
+      });
+      
       ctx.body = { data: profile };
       ctx.status = 201;
     } catch (error: any) {
       strapi.log.error('[Embeddings Plugin] Create profile error:', error);
-      
-      // Handle unique constraint violations
-      if (error.code === '23505') {
-        return ctx.conflict('A profile with this slug already exists');
-      }
       
       const message = error.message || 'Error creating profile';
       ctx.throw(500, message);
@@ -342,13 +422,24 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
         return ctx.badRequest('Profile ID is required');
       }
       
-      // This would typically queue a job to reindex
-      // For now, return success
+      // Start indexing in the background
+      setImmediate(async () => {
+        try {
+          strapi.log.info(`[Embeddings Plugin] Starting reindexing for profile ${id}`);
+          await strapi
+            .plugin('embeddings')
+            .service('service')
+            .indexProfile(id);
+        } catch (error: any) {
+          strapi.log.error(`[Embeddings Plugin] Error reindexing profile ${id}:`, error);
+        }
+      });
+      
       ctx.body = { 
         data: { 
           success: true,
-          message: 'Reindexing job has been queued',
-          jobId: `job-${id}-${Date.now()}`
+          message: 'Reindexing job has been started',
+          profileId: id
         } 
       };
     } catch (error: any) {

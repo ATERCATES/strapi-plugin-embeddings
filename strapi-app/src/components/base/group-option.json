@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_base_group_options",
+  "info": {
+    "name": "group_option",
+    "displayName": "group_option",
+    "icon": "braille"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    }
+  }
+}

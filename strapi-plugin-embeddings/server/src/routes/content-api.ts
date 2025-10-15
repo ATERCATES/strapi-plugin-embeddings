@@ -10,6 +10,15 @@ export default [
   },
   {
     method: 'GET',
+    path: '/:profileName/query',
+    handler: 'controller.queryByProfileName',
+    config: {
+      policies: [],
+      auth: false,
+    },
+  },
+  {
+    method: 'GET',
     path: '/profiles',
     handler: 'controller.listProfiles',
     config: {

@@ -1,0 +1,12 @@
+{
+  "collectionName": "components_teacher_traits",
+  "info": {
+    "displayName": "traits"
+  },
+  "options": {},
+  "attributes": {
+    "description": {
+      "type": "string"
+    }
+  }
+}

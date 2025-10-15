@@ -1,0 +1,12 @@
+{
+  "collectionName": "components_notification_mail",
+  "info": {
+    "displayName": "mail"
+  },
+  "options": {},
+  "attributes": {
+    "templateId": {
+      "type": "string"
+    }
+  }
+}

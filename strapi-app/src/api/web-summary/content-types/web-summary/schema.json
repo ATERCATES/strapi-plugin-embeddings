@@ -1,0 +1,39 @@
+{
+  "kind": "collectionType",
+  "collectionName": "web_summaries",
+  "info": {
+    "singularName": "web-summary",
+    "pluralName": "web-summaries",
+    "displayName": "WebSummary",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "code": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "string"
+    },
+    "tabs": {
+      "displayName": "Summary Tab",
+      "type": "component",
+      "repeatable": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "component": "summary.summary-tab"
+    }
+  }
+}

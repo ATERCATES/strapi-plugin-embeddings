@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_base_web_labels",
+  "info": {
+    "displayName": "WebLabel",
+    "icon": "chartBubble",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "emoji": {
+      "type": "string"
+    }
+  }
+}

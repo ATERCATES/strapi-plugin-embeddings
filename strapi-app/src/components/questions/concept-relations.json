@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_questions_concept_relations",
+  "info": {
+    "name": "Relación de conceptos",
+    "displayName": "Relación de conceptos",
+    "icon": "link",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "concepts": {
+      "type": "component",
+      "repeatable": true,
+      "component": "base.relation-concept"
+    }
+  }
+}

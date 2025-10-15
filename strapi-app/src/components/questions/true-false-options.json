@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_questions_true_false_options",
+  "info": {
+    "name": "Verdadero/Falso",
+    "displayName": "Verdadero/Falso",
+    "icon": "check",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "istrue": {
+      "type": "boolean",
+      "required": true
+    }
+  }
+}

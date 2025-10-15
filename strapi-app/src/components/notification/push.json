@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_notification_pushes",
+  "info": {
+    "displayName": "push"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "body": {
+      "type": "text"
+    }
+  }
+}

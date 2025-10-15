@@ -1,0 +1,64 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tags",
+  "info": {
+    "singularName": "tag",
+    "pluralName": "tags",
+    "displayName": "Tag",
+    "name": "tag",
+    "description": ""
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "faqs": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::faq.faq",
+      "mappedBy": "tags"
+    },
+    "option_with_descriptions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::option-with-description.option-with-description",
+      "mappedBy": "tags"
+    },
+    "copies": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::copy.copy",
+      "mappedBy": "tags"
+    },
+    "blog_entries": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::blog-entry.blog-entry",
+      "mappedBy": "tags"
+    },
+    "pages": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::page.page",
+      "mappedBy": "tags"
+    },
+    "cities": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::city.city",
+      "mappedBy": "tags"
+    },
+    "notifications": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::notification.notification",
+      "mappedBy": "tags"
+    }
+  }
+}

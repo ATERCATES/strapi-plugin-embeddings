@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_summary_summary_tabs",
+  "info": {
+    "displayName": "Summary Tab",
+    "icon": "strikeThrough",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "slideTitle": {
+      "type": "string"
+    },
+    "slideBody": {
+      "type": "text"
+    },
+    "labels": {
+      "displayName": "WebLabel",
+      "type": "component",
+      "repeatable": true,
+      "component": "base.web-label"
+    },
+    "photo": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "cta": {
+      "type": "string"
+    }
+  }
+}
