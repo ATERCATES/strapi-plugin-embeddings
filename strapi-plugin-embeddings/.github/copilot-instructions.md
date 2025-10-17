@@ -217,3 +217,12 @@ If you're stuck after 2-3 attempts:
 6. Ask for clarification if the requirement is unclear
 
 Remember: It's better to search and find the right solution than to keep trying wrong approaches.
+
+## Environment Setup
+
+1. Strapi is already running on localhost:1337/admin
+2. Plugin is already running and connected to Strapi
+
+### Credentials for Strapi Admin
+- devteam@dribo.es:
+- BxyQpe8P

@@ -298,12 +298,36 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
 
   /**
    * GET /embeddings/content-types
-   * Get all content types with their text fields
+   * Get all content types with their text fields and component fields
    */
   async getContentTypes(ctx: any) {
     try {
       const contentTypes = strapi.contentTypes;
+      const components = strapi.components;
       const result: any[] = [];
+
+      // Helper function to extract text fields from component attributes
+      const getComponentTextFields = (componentUid: string) => {
+        const component = components[componentUid];
+        if (!component) return [];
+        
+        const textFields: any[] = [];
+        const attributes = (component as any).attributes || {};
+
+        for (const [fieldName, field] of Object.entries(attributes)) {
+          const fieldType = (field as any).type;
+          
+          if (fieldType === 'text' || fieldType === 'richtext' || fieldType === 'string') {
+            textFields.push({
+              name: fieldName,
+              type: fieldType,
+              isComponentField: true,
+            });
+          }
+        }
+
+        return textFields;
+      };
 
       for (const [uid, contentType] of Object.entries(contentTypes)) {
         // Skip system content types
@@ -323,6 +347,24 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
               name: fieldName,
               type: fieldType,
             });
+          } else if (fieldType === 'component') {
+            // Handle component fields
+            const componentUid = (field as any).component;
+            const componentFields = getComponentTextFields(componentUid);
+            
+            if (componentFields.length > 0) {
+              textFields.push({
+                name: fieldName,
+                type: 'component',
+                isComponent: true,
+                componentUid,
+                children: componentFields.map(childField => ({
+                  ...childField,
+                  parentName: fieldName,
+                  displayName: `${fieldName}.${childField.name}`,
+                })),
+              });
+            }
           }
         }
 

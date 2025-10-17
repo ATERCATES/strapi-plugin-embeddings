@@ -13,18 +13,28 @@ import {
   MultiSelect,
   MultiSelectOption,
   Toggle,
+  Box,
 } from '@strapi/design-system';
+import { ChevronDown, ChevronRight } from '@strapi/icons';
 import { useFetchClient } from '@strapi/strapi/admin';
 import { getTranslation } from '../utils/getTranslation';
 import { PLUGIN_ID } from '../pluginId';
 
+interface Field {
+  name: string;
+  type: string;
+  isComponent?: boolean;
+  isComponentField?: boolean;
+  componentUid?: string;
+  children?: Array<Field & { parentName: string; displayName: string }>;
+  parentName?: string;
+  displayName?: string;
+}
+
 interface ContentType {
   uid: string;
   displayName: string;
-  fields: {
-    name: string;
-    type: string;
-  }[];
+  fields: Field[];
 }
 
 interface CreateProfileModalProps {
@@ -53,6 +63,8 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
     selectedFields: [] as string[],
     auto_sync: true,
   });
+
+  const [expandedComponents, setExpandedComponents] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen) {
@@ -110,17 +122,22 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
         return;
       }
 
-      const fields = form.selectedFields.map((fieldName) => ({
-        content_type: form.selectedContentType,
-        field_name: fieldName,
-      }));
+      const fields = form.selectedFields.map((fieldName) => {
+        // Check if this is a component field (contains a dot)
+        const [parentField, childField] = fieldName.includes('.')
+          ? fieldName.split('.')
+          : [fieldName, null];
+
+        return {
+          content_type: form.selectedContentType,
+          field_name: childField ? `${parentField}.${childField}` : fieldName,
+          component_parent: childField ? parentField : undefined,
+        };
+      });
 
       const payload = {
         name: form.name,
         slug: form.slug,
-        provider: 'openai',
-        embedding_dimension: 1536,
-        distance_metric: 'cosine',
         fields,
         auto_sync: form.auto_sync,
       };
@@ -135,6 +152,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
         selectedFields: [],
         auto_sync: true,
       });
+      setExpandedComponents(new Set());
       
       onSuccess();
       onClose();
@@ -249,23 +267,149 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({
                   <Field.Label>
                     {formatMessage({ id: getTranslation('form.profile.fields') })}
                   </Field.Label>
-                  <MultiSelect
-                    placeholder={formatMessage({
-                      id: getTranslation('form.profile.fields.fieldName.placeholder'),
-                    })}
-                    value={form.selectedFields}
-                    onChange={(values: string[]) =>
-                      setForm((prev) => ({ ...prev, selectedFields: values }))
-                    }
-                    disabled={!form.selectedContentType || availableFields.length === 0}
-                    withTags
+                  <Box
+                    hasRadius
+                    borderColor="neutral200"
+                    borderStyle="solid"
+                    borderWidth="1px"
+                    padding={3}
+                    background="neutral100"
                   >
-                    {availableFields.map((field) => (
-                      <MultiSelectOption key={field.name} value={field.name}>
-                        {field.name} ({field.type})
-                      </MultiSelectOption>
-                    ))}
-                  </MultiSelect>
+                    <Flex direction="column" gap={2}>
+                      {availableFields.length === 0 ? (
+                        <Typography textColor="neutral600" variant="pi">
+                          {!form.selectedContentType
+                            ? 'Select a content type first'
+                            : 'No text fields available in this content type'}
+                        </Typography>
+                      ) : (
+                        availableFields.map((field) => {
+                          if (field.isComponent) {
+                            const isExpanded = expandedComponents.has(field.name);
+                            return (
+                              <Box key={field.name}>
+                                <Box
+                                  paddingTop={2}
+                                  paddingBottom={2}
+                                  paddingLeft={3}
+                                  paddingRight={3}
+                                  hasRadius
+                                  borderColor="neutral200"
+                                  borderStyle="solid"
+                                  borderWidth="1px"
+                                  background="neutral0"
+                                  style={{ cursor: 'pointer' }}
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedComponents);
+                                    if (isExpanded) {
+                                      newExpanded.delete(field.name);
+                                    } else {
+                                      newExpanded.add(field.name);
+                                    }
+                                    setExpandedComponents(newExpanded);
+                                  }}
+                                >
+                                  <Flex alignItems="center" gap={2}>
+                                    {isExpanded ? <ChevronDown /> : <ChevronRight />}
+                                    <Typography fontWeight="bold" textColor="neutral800">
+                                      {field.name}
+                                    </Typography>
+                                    <Typography textColor="neutral600" variant="pi">
+                                      (component)
+                                    </Typography>
+                                  </Flex>
+                                </Box>
+                                {isExpanded && field.children && (
+                                  <Box paddingLeft={6} paddingTop={2} paddingBottom={2}>
+                                    <Flex direction="column" gap={2}>
+                                      {field.children.map((childField) => {
+                                        const fieldId = childField.displayName || `${field.name}.${childField.name}`;
+                                        const isSelected = form.selectedFields.includes(fieldId);
+                                        return (
+                                          <Flex
+                                            key={fieldId}
+                                            as="label"
+                                            alignItems="center"
+                                            gap={2}
+                                            paddingTop={2}
+                                            paddingBottom={2}
+                                            paddingLeft={3}
+                                            paddingRight={3}
+                                            hasRadius
+                                            borderColor={isSelected ? 'primary200' : 'neutral200'}
+                                            borderStyle="solid"
+                                            borderWidth="1px"
+                                            background={isSelected ? 'primary100' : 'neutral0'}
+                                            style={{ cursor: 'pointer' }}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => {
+                                                setForm((prev) => ({
+                                                  ...prev,
+                                                  selectedFields: isSelected
+                                                    ? prev.selectedFields.filter((f) => f !== fieldId)
+                                                    : [...prev.selectedFields, fieldId],
+                                                }));
+                                              }}
+                                            />
+                                            <Typography textColor="neutral800">
+                                              {childField.name}
+                                            </Typography>
+                                            <Typography textColor="neutral600" variant="pi">
+                                              ({childField.type})
+                                            </Typography>
+                                          </Flex>
+                                        );
+                                      })}
+                                    </Flex>
+                                  </Box>
+                                )}
+                              </Box>
+                            );
+                          } else {
+                            const isSelected = form.selectedFields.includes(field.name);
+                            return (
+                              <Flex
+                                key={field.name}
+                                as="label"
+                                alignItems="center"
+                                gap={2}
+                                paddingTop={2}
+                                paddingBottom={2}
+                                paddingLeft={3}
+                                paddingRight={3}
+                                hasRadius
+                                borderColor={isSelected ? 'primary200' : 'neutral200'}
+                                borderStyle="solid"
+                                borderWidth="1px"
+                                background={isSelected ? 'primary100' : 'neutral0'}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      selectedFields: isSelected
+                                        ? prev.selectedFields.filter((f) => f !== field.name)
+                                        : [...prev.selectedFields, field.name],
+                                    }));
+                                  }}
+                                />
+                                <Typography textColor="neutral800">{field.name}</Typography>
+                                <Typography textColor="neutral600" variant="pi">
+                                  ({field.type})
+                                </Typography>
+                              </Flex>
+                            );
+                          }
+                        })
+                      )}
+                    </Flex>
+                  </Box>
                 </Field.Root>
               </Grid.Item>
 

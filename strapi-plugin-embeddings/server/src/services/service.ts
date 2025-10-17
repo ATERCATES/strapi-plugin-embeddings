@@ -32,6 +32,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => {
     getProfiles: profilesService.getProfiles.bind(profilesService),
     getProfile: profilesService.getProfile.bind(profilesService),
     createProfile: profilesService.createProfile.bind(profilesService),
+    deleteProfile: profilesService.deleteProfile.bind(profilesService),
     indexProfile: profilesService.indexProfile.bind(profilesService),
 
     // Query logging
