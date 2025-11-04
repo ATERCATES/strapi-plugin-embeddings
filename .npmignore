@@ -1,0 +1,54 @@
+# Development files
+.github/
+.git/
+.gitignore
+.eslintignore
+.prettierignore
+.editorconfig
+
+# Source code (not needed in published package)
+admin/src/
+server/src/
+admin/tsconfig*.json
+server/tsconfig*.json
+
+# Configuration files not needed for consumers
+.prettierrc
+.env
+.env.*
+
+# Build artifacts and cache
+.tsbuildinfo
+.eslintcache
+.cache/
+
+# Tests and coverage
+coverage/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Documentation and diagrams
+model.dbml
+README.md
+LICENSE
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+.Spotlight-V100
+.Trashes
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
