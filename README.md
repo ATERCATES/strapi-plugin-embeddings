@@ -14,20 +14,25 @@ Este plugin permite:
 
 ### Configuración inicial
 
-1. **Archivo `config/plugins.ts` o `config/plugins.js`**:
+1. **Instalar el plugin**:
+```bash
+npm i strapi-plugin-embeddings
+```
+
+2. **Archivo `config/plugins.ts` o `config/plugins.js`**:
 ```typescript
 embeddings: {
   enabled: true,
 },
 ```
 
-2. **Variables de entorno (`.env`)**:
+3. **Variables de entorno (`.env`)**:
 ```
 OPENAI_API_KEY=sk-...
 DATABASE_CLIENT=postgres
 ```
 
-3. **El plugin se configura a través del panel de administración de Strapi**.
+4. **El plugin se configura a través del panel de administración de Strapi**.
 
 ## Características principales
 
