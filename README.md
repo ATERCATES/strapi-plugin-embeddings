@@ -12,6 +12,23 @@ Este plugin permite:
 - **Procesamiento en background**: Sistema de trabajos asincronos para generar y actualizar embeddings
 - **Monitoreo y logging**: Registro completo de todas las operaciones para debugging y auditoría
 
+### Configuración inicial
+
+1. **Archivo `config/plugins.ts` o `config/plugins.js`**:
+```typescript
+embeddings: {
+  enabled: true,
+},
+```
+
+2. **Variables de entorno (`.env`)**:
+```
+OPENAI_API_KEY=sk-...
+DATABASE_CLIENT=postgres
+```
+
+3. **El plugin se configura a través del panel de administración de Strapi**.
+
 ## Características principales
 
 ### 📊 Admin Panel
@@ -48,8 +65,6 @@ Requiere:
 - Strapi v5
 - PostgreSQL con pgvector instalado
 - Clave API de OpenAI
-
-El plugin se configura a través del panel de administración de Strapi.
 
 ## Licencia
 
