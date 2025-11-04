@@ -52,6 +52,10 @@
     "access": "public",
     "provenance": true
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ATERCATES/strapi-plugin-embeddings"
+  },
   "scripts": {
     "build": "strapi-plugin build",
     "watch": "strapi-plugin watch",
