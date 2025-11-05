@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación - Strapi Plugin Embeddings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: #232526;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(30, 32, 38, 0.85);
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(80,80,100,0.18);
+        }
+
+        header {
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            color: #fff;
+            padding: 60px 40px 40px 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 12px #0006;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.92;
+            color: #bdbdbd;
+        }
+
+        .content {
+            padding: 50px 40px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 28px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: rgba(44, 46, 56, 0.92);
+            border: 1.5px solid rgba(80,80,100,0.22);
+            border-radius: 14px;
+            padding: 32px 24px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: #eaeaea;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #764ba2 0%, #667eea 100%);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: #764ba2;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.18);
+            transform: translateY(-5px) scale(1.03);
+            background: rgba(60, 62, 72, 0.98);
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 2px 6px #764ba2cc);
+        }
+
+        .card-title {
+            font-size: 1.25em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .card-description {
+            font-size: 0.97em;
+            color: #bdbdbd;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #a991ff;
+            font-weight: 600;
+            font-size: 0.98em;
+            transition: gap 0.3s ease;
+        }
+
+        .card:hover .card-link {
+            gap: 12px;
+            color: #fff;
+        }
+
+        .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover .arrow {
+            transform: translateX(5px);
+        }
+
+        footer {
+            background: rgba(30,32,38,0.95);
+            padding: 25px 40px;
+            text-align: center;
+            color: #bdbdbd;
+            font-size: 0.95em;
+            border-top: 1px solid rgba(80,80,100,0.18);
+        }
+
+        .no-docs {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 40px 20px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 30px 12px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            footer {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Documentación API</h1>
+            <p>Strapi Plugin Embeddings - Explorador de Documentación</p>
+        </header>
+
+        <div class="content">
+            <div class="grid" id="docsGrid"></div>
+        </div>
+
+        <footer>
+            <p>🔗 Selecciona una opción de documentación para explorar los detalles de la API</p>
+        </footer>
+    </div>
+
+    <script>
+        // Configuración de documentación
+        const docOptions = [
+            {
+                title: 'Swagger UI',
+                description: 'Interfaz interactiva para explorar y probar endpoints',
+                icon: '⚙️',
+                file: 'swagger.html'
+            },
+            {
+                title: 'ReDoc',
+                description: 'Documentación elegante y responsiva con diseño moderno',
+                icon: '📖',
+                file: 'redoc.html'
+            },
+            {
+                title: 'Scalar',
+                description: 'Documentación moderna con cliente API integrado',
+                icon: '✨',
+                file: 'scalar.html'
+            },
+            {
+                title: 'OpenAPI JSON',
+                description: 'Especificación OpenAPI en formato JSON puro',
+                icon: '📋',
+                file: 'openapi.json'
+            }
+        ];
+
+        // Función para renderizar dinámicamente
+        function renderDocs() {
+            const grid = document.getElementById('docsGrid');
+
+            if (docOptions.length === 0) {
+                grid.innerHTML = '<div class="no-docs">No hay documentación disponible</div>';
+                return;
+            }
+
+            grid.innerHTML = docOptions
+                .map((doc, index) => `
+                    <a href="${doc.file}" class="card" title="Abrir ${doc.title}">
+                        <div class="card-icon">${doc.icon}</div>
+                        <div class="card-title">${doc.title}</div>
+                        <div class="card-description">${doc.description}</div>
+                        <div class="card-link">
+                            Ver documentación
+                            <span class="arrow">→</span>
+                        </div>
+                    </a>
+                `)
+                .join('');
+        }
+
+        // Renderizar documentos cuando carga la página
+        document.addEventListener('DOMContentLoaded', renderDocs);
+    </script>
+</body>
+</html>
+
