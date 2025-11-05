@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Strapi Plugin Embeddings API Documentation'</title>
+</head>
+<body style="margin:0;padding:0;">
+  <div id="app"></div>
+
+  <!-- Cargar el bundle de Scalar desde CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+
+  <script>
+    // Inicializar Scalar
+    Scalar.createApiReference('#app', {
+      url: './openapi.json',
+      // theme: 'purple',
+    });
+  </script>
+</body>
+</html>
