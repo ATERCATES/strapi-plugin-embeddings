@@ -121,7 +121,7 @@
             "example": 10
           },
           {
-            "name": "minScore",
+            "name": "min_score",
             "in": "query",
             "required": false,
             "description": "Minimum similarity score threshold (0-1). Results below this score will be filtered out. Higher values return more relevant results.",
@@ -263,7 +263,7 @@
             "example": 5
           },
           {
-            "name": "minScore",
+            "name": "min_score",
             "in": "query",
             "required": false,
             "description": "Minimum similarity score threshold (0-1). Results below this score will be filtered out.",
@@ -276,7 +276,7 @@
             "example": 0.75
           },
           {
-            "name": "embeddingField",
+            "name": "embedding_fields",
             "in": "query",
             "required": false,
             "description": "Filter results by specific embedding field(s). Can be a single field name or multiple fields. Only embeddings from these fields will be searched.",
@@ -536,22 +536,22 @@
                 }
               },
               "invalidMinScore": {
-                "summary": "Invalid minScore parameter",
+                "summary": "Invalid min_score parameter",
                 "value": {
                   "error": {
                     "status": 400,
                     "name": "BadRequestError",
-                    "message": "The minScore parameter must be between 0 and 1"
+                    "message": "The min_score parameter must be between 0 and 1"
                   }
                 }
               },
-              "invalidEmbeddingField": {
-                "summary": "Invalid embeddingField parameter",
+              "invalidEmbeddingFields": {
+                "summary": "Invalid embedding_fields parameter",
                 "value": {
                   "error": {
                     "status": 400,
                     "name": "BadRequestError",
-                    "message": "embeddingField must be a string or array of strings"
+                    "message": "embedding_fields must be a string or array of strings"
                   }
                 }
               }

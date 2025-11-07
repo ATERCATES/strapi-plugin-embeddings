@@ -7,14 +7,14 @@ const DEFAULT_TOP_K = 10;
 
 interface SemanticFilters {
   contentType?: string;
-  embeddingFields?: string[];
+  embedding_fields?: string[];
   published?: boolean;
 }
 
 interface SemanticQueryParams {
   query: string;
   top_k?: number;
-  minScore?: number;
+  min_score?: number;
   filters?: SemanticFilters;
 }
 
@@ -29,7 +29,7 @@ export const createSearchService = ({ strapi }: { strapi: Core.Strapi }) => {
 
   const applyFilters = (
     qb: Knex.QueryBuilder,
-    { contentType, embeddingFields, published }: SemanticFilters = {}
+    { contentType, embedding_fields, published }: SemanticFilters = {}
   ) => {
     const shouldFilterPublished = published ?? true;
     if (shouldFilterPublished) {
@@ -40,14 +40,8 @@ export const createSearchService = ({ strapi }: { strapi: Core.Strapi }) => {
       qb.andWhere('content_type', contentType);
     }
 
-    if (embeddingFields?.length) {
-      qb.andWhere(function applyFieldFilters() {
-        embeddingFields.forEach(field => {
-          this.orWhere(function matchFieldVariant() {
-            this.where('field', field).orWhere('field', 'like', `${field}[%]`);
-          });
-        });
-      });
+    if (embedding_fields?.length) {
+      qb.whereIn('field', embedding_fields);
     }
   };
 
@@ -59,13 +53,13 @@ export const createSearchService = ({ strapi }: { strapi: Core.Strapi }) => {
       .select('content_type')
       .select(knex.raw('1 - (embedding <=> ?::vector) AS similarity_score', [vectorLiteral]));
 
-  const applyMinScoreFilter = (
+  const applymin_scoreFilter = (
     qb: Knex.QueryBuilder,
     vectorLiteral: string,
-    minScore?: number
+    min_score?: number
   ) => {
-    if (minScore === undefined) return;
-    qb.andWhereRaw('1 - (embedding <=> ?::vector) >= ?', [vectorLiteral, minScore]);
+    if (min_score === undefined) return;
+    qb.andWhereRaw('1 - (embedding <=> ?::vector) >= ?', [vectorLiteral, min_score]);
   };
 
   const formatSearchResult = (row: any): SearchResult => ({
@@ -77,7 +71,7 @@ export const createSearchService = ({ strapi }: { strapi: Core.Strapi }) => {
   const executeSemanticQuery = async ({
     query,
     top_k = DEFAULT_TOP_K,
-    minScore,
+    min_score,
     filters,
   }: SemanticQueryParams): Promise<SearchResult[]> => {
     const embedding = await openAIService.generateEmbedding(query);
@@ -87,7 +81,7 @@ export const createSearchService = ({ strapi }: { strapi: Core.Strapi }) => {
     const queryBuilder = createBaseQuery(knex, vectorLiteral);
 
     applyFilters(queryBuilder, filters);
-    applyMinScoreFilter(queryBuilder, vectorLiteral, minScore);
+    applymin_scoreFilter(queryBuilder, vectorLiteral, min_score);
 
     queryBuilder.orderByRaw('embedding <=> ?::vector', [vectorLiteral]);
     queryBuilder.limit(top_k);
@@ -100,18 +94,18 @@ export const createSearchService = ({ strapi }: { strapi: Core.Strapi }) => {
     async semanticSearchByProfile(params: {
       query: string;
       contentType: string;
-      embeddingFields?: string[];
+      embedding_fields?: string[];
       top_k?: number;
-      minScore?: number;
+      min_score?: number;
     }): Promise<SearchResult[]> {
       try {
         return await executeSemanticQuery({
           query: params.query,
           top_k: params.top_k,
-          minScore: params.minScore,
+          min_score: params.min_score,
           filters: {
             contentType: params.contentType,
-            embeddingFields: params.embeddingFields,
+            embedding_fields: params.embedding_fields,
           },
         });
       } catch (error: any) {
@@ -123,14 +117,14 @@ export const createSearchService = ({ strapi }: { strapi: Core.Strapi }) => {
     async semanticSearchAll(params: {
       query: string;
       top_k?: number;
-      minScore?: number;
+      min_score?: number;
       published?: boolean;
     }): Promise<SearchResult[]> {
       try {
         return await executeSemanticQuery({
           query: params.query,
           top_k: params.top_k,
-          minScore: params.minScore,
+          min_score: params.min_score,
           filters: {
             published: params.published,
           },

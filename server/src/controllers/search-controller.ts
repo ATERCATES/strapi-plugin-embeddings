@@ -11,15 +11,15 @@ const calculateScoreStats = (results: any[]) => {
   };
 };
 
-const normalizeEmbeddingFields = (embeddingField: any): string[] => {
-  if (!embeddingField) return [];
+const normalizeEmbeddingFields = (embedding_fields: any): string[] => {
+  if (!embedding_fields) return [];
   
-  if (typeof embeddingField === 'string') {
-    return [embeddingField];
+  if (typeof embedding_fields === 'string') {
+    return [embedding_fields];
   }
   
-  if (Array.isArray(embeddingField)) {
-    return embeddingField.filter(field => typeof field === 'string');
+  if (Array.isArray(embedding_fields)) {
+    return embedding_fields.filter(field => typeof field === 'string');
   }
   
   return [];
@@ -34,19 +34,19 @@ const validateParams = (params: any) => {
     return {'error': 'The top_k parameter must be between 1 and 1000'};
   }
 
-  if (params.minScore && (params.minScore < 0 || params.minScore > 1)) {
-    return {'error': 'The minScore parameter must be between 0 and 1'};
+  if (params.min_score && (params.min_score < 0 || params.min_score > 1)) {
+    return {'error': 'The min_score parameter must be between 0 and 1'};
   }
 
-  if (params.embeddingField) {
-    const normalized = normalizeEmbeddingFields(params.embeddingField);
+  if (params.embedding_fields) {
+    const normalized = normalizeEmbeddingFields(params.embedding_fields);
     if (normalized.length === 0) {
-      return {'error': 'embeddingField must be a string or array of strings'};
+      return {'error': 'embedding_fields must be a string or array of strings'};
     }
   }
 
   return null;
-}
+};
 
 export const createSearchController = ({ strapi }: { strapi: Core.Strapi }) => ({
   async searchByContentType(ctx: any) {
@@ -73,12 +73,20 @@ export const createSearchController = ({ strapi }: { strapi: Core.Strapi }) => (
       return ctx.badRequest(validationError.error);
     }
 
+    const normalizedFields = normalizeEmbeddingFields(query.embedding_fields);
+    if (query.embedding_fields && normalizedFields.length > 0) {
+      const invalidFields = normalizedFields.filter(field => !profile.fields.includes(field));
+      if (invalidFields.length > 0) {
+        return ctx.badRequest(`Invalid embedding_fields: ${invalidFields.join(', ')}. Available fields are: ${profile.fields.join(', ')}`);
+      }
+    }
+
     const searchParams = {
       query: query.query,
       contentType,
       top_k: query.top_k ?? 10,
-      minScore: query.minScore ?? 0,
-      embeddingFields: normalizeEmbeddingFields(query.embeddingField),
+      min_score: query.min_score ?? 0,
+      embedding_fields: normalizedFields,
     };
 
     const searchResults = await service.semanticSearchByProfile(searchParams);
@@ -123,7 +131,7 @@ export const createSearchController = ({ strapi }: { strapi: Core.Strapi }) => (
     const searchResults = await service.semanticSearchAll({
       query: query.query,
       top_k: query.top_k ?? 10,
-      minScore: query.minScore ?? 0,
+      min_score: query.min_score ?? 0,
     });
 
     const documentIds = searchResults.map((result: any) => result.documentId);
