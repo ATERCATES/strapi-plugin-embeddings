@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-embeddings",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "AI embeddings and semantic search plugin for Strapi v5 with pgvector support",
   "keywords": [
     "strapi",
