@@ -27,6 +27,10 @@
     {
       "name": "Search",
       "description": "Semantic search endpoints - Search content using AI-powered vector similarity"
+    },
+    {
+      "name": "Indexing",
+      "description": "Document indexing endpoints - Manually index or re-index documents for embedding generation"
     }
   ],
   "paths": {
@@ -424,6 +428,204 @@
                     "status": 404,
                     "name": "NotFoundError",
                     "message": "No profile found for content type: article"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/{contentType}/{documentId}/index": {
+      "post": {
+        "tags": ["Indexing"],
+        "summary": "Index a specific document",
+        "description": "Manually triggers embedding generation for a specific document. This endpoint creates or updates embeddings for the document's configured fields and makes it searchable. The document must exist in the specified content type and a profile must be configured and enabled for that content type.",
+        "operationId": "indexDocument",
+        "parameters": [
+          {
+            "name": "contentType",
+            "in": "path",
+            "required": true,
+            "description": "The content type identifier where the document is stored (e.g., 'article', 'product', 'post'). Must match a configured profile's content type without the 'api::' prefix.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "article"
+          },
+          {
+            "name": "documentId",
+            "in": "path",
+            "required": true,
+            "description": "The unique identifier of the document to index. This is the document's ID in the Strapi system.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "abc123def456"
+          }
+        ],
+        "requestBody": {
+          "description": "Request body (no content required for this endpoint)",
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document successfully indexed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "Indexing result information",
+                      "properties": {
+                        "documentId": {
+                          "type": "string",
+                          "description": "The ID of the indexed document"
+                        },
+                        "contentType": {
+                          "type": "string",
+                          "description": "The content type of the indexed document"
+                        },
+                        "indexed": {
+                          "type": "boolean",
+                          "description": "Whether the document was successfully indexed",
+                          "example": true
+                        },
+                        "totalProcessed": {
+                          "type": "integer",
+                          "description": "Total number of embedding records processed"
+                        },
+                        "totalFailed": {
+                          "type": "integer",
+                          "description": "Total number of embedding records that failed to process"
+                        }
+                      },
+                      "required": ["documentId", "contentType", "indexed"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "description": "Status message about the indexing operation"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "data": {
+                    "documentId": "abc123def456",
+                    "contentType": "article",
+                    "indexed": true,
+                    "totalProcessed": 3,
+                    "totalFailed": 0
+                  },
+                  "meta": {
+                    "message": "Document abc123def456 has been indexed successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid parameters or indexing failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missingContentType": {
+                    "summary": "Missing content type parameter",
+                    "value": {
+                      "error": {
+                        "status": 400,
+                        "name": "BadRequestError",
+                        "message": "contentType parameter is required"
+                      }
+                    }
+                  },
+                  "missingDocumentId": {
+                    "summary": "Missing document ID parameter",
+                    "value": {
+                      "error": {
+                        "status": 400,
+                        "name": "BadRequestError",
+                        "message": "documentId parameter is required"
+                      }
+                    }
+                  },
+                  "indexingFailed": {
+                    "summary": "Indexing operation failed",
+                    "value": {
+                      "error": {
+                        "status": 400,
+                        "name": "BadRequestError",
+                        "message": "Failed to index document abc123def456"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Profile is disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": {
+                    "status": 403,
+                    "name": "ForbiddenError",
+                    "message": "Profile for content type article is disabled"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found - Document or profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "profileNotFound": {
+                    "summary": "No profile found for content type",
+                    "value": {
+                      "error": {
+                        "status": 404,
+                        "name": "NotFoundError",
+                        "message": "No profile found for content type: article"
+                      }
+                    }
+                  },
+                  "documentNotFound": {
+                    "summary": "Document not found",
+                    "value": {
+                      "error": {
+                        "status": 404,
+                        "name": "NotFoundError",
+                        "message": "Document abc123def456 not found for content type article"
+                      }
+                    }
                   }
                 }
               }
