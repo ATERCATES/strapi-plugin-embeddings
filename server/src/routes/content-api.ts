@@ -31,4 +31,12 @@ export default [
       policies: [],
     },
   },
+  {
+    method: 'POST',
+    path: '/:contentType/:documentId/index',
+    handler: 'index-controller.indexDocument',
+    config: {
+      policies: [],
+    },
+  },
 ];
